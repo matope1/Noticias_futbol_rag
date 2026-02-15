@@ -1,0 +1,22 @@
+services:
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_data:/chroma/.chroma/index
+    restart: always
+
+  frontend:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      - chroma  
+
+volumes:
+  chroma_data:
