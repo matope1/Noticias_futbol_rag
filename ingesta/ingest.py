@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 load_dotenv()  # Carga variables del archivo .env
 
-PDF_PATH = Path("documentos/Noticias_Futbol.pdf")
+PDF_PATH = Path("ingesta\\documentos\\Noticias_Futbol.pdf")
 COLLECTION_NAME = "deportes"
 CHROMA_HOST = "localhost"
 CHROMA_PORT = 8000
@@ -107,3 +107,4 @@ collection.add(
 )
 
 logging.info("✅ Ingesta completada correctamente.")
+
