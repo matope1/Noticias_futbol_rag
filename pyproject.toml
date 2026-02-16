@@ -1,0 +1,18 @@
+[project]
+name = "bbdd-vectorial"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.0",
+    "google-genai>=1.63.0",
+    "google-generativeai>=0.8.6",
+    "langchain>=1.2.10",
+    "langchain-community>=0.4.1",
+    "langchain-huggingface>=1.2.0",
+    "langchain-text-splitters>=1.1.0",
+    "pathlib>=1.0.1",
+    "pypdf>=6.7.0",
+    "sentence-transformers>=5.2.2",
+]
