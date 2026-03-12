@@ -8,8 +8,8 @@ COPY requirements.txt .
 # Instala dependencias
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Copia tu código
-COPY app.py .
+# Copia todo el proyecto
+COPY . .
 
 # Exponer puerto para Streamlit
 EXPOSE 8501

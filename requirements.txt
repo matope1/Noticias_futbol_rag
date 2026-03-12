@@ -10,8 +10,18 @@
 # # sentence-transformers>=2.2.2
 # streamlit
 
+# streamlit
+# chromadb
+# python-dotenv
+# google-generativeai
+# requests
+
 streamlit
 chromadb
 python-dotenv
 google-generativeai
 requests
+langchain
+langchain-community
+langchain-text-splitters
+pypdf

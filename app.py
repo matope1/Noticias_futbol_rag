@@ -1,97 +1,84 @@
 import streamlit as st
-import chromadb
-import google.generativeai as genai
-from dotenv import load_dotenv
-import os
+from rag_service import rag_answer
 
-# ---------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------
-load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
-if not GEMINI_API_KEY:
-    st.error("Falta GOOGLE_API_KEY en .env")
-    st.stop()
-
-genai.configure(api_key=GEMINI_API_KEY)
-
-EMBED_MODEL = "models/gemini-embedding-001"
-LLM_MODEL = "gemini-2.5-flash-lite"
-
-CHROMA_HOST = "chroma"   # nombre del servicio en docker-compose
-CHROMA_PORT = 8000
-COLLECTION_NAME = "deportes"
-
-# ---------------------------------------------------------
-# CONEXIÓN A CHROMA
-# ---------------------------------------------------------
-client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-collection = client.get_collection(COLLECTION_NAME)
-
-# ---------------------------------------------------------
-# FUNCIONES RAG
-# ---------------------------------------------------------
-def embed(text):
-    """Genera embeddings con Gemini."""
-    r = genai.embed_content(model=EMBED_MODEL, content=text)
-    return r["embedding"]
-
-def retrieve(query):
-    """Recupera contexto desde Chroma."""
-    q_vec = embed(query)
-    results = collection.query(query_embeddings=q_vec, n_results=5)
-    docs = results["documents"][0]
-    return "\n\n".join(docs)
-
-def rag_answer(query):
-    """Genera respuesta usando RAG (Chroma + Gemini)."""
-    context = retrieve(query)
-
-    if not context.strip():
-        return "No encontré información relevante en la base vectorial."
-
-    prompt = f"""
-Responde SOLO usando el contexto. Si no está, dilo.
-
-Pregunta:
-{query}
-
-Contexto:
-{context}
-
-Respuesta:
-"""
-
-    llm = genai.GenerativeModel(LLM_MODEL)
-    return llm.generate_content(prompt).text
-
-# ---------------------------------------------------------
-# UI STREAMLIT (CHATBOT)
-# ---------------------------------------------------------
+# CONFIGURACIÓN DE STREAMLIT
 st.set_page_config(page_title="Chat Deportivo RAG", layout="centered")
-st.title("⚽🤖 Chat Deportivo RAG")
 
+
+# CABECERA
+st.title("⚽🤖 Chat Deportivo RAG")
+st.caption("Haz preguntas sobre deportes españoles usando Chroma + Gemini")
+
+
+# ESTADO DE SESIÓN
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mostrar historial
+
+# MOSTRAR HISTORIAL
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-# Entrada del usuario
+
+# ENTRADA DEL USUARIO
 query = st.chat_input("Haz una pregunta sobre deportes españoles")
 
 if query:
-    st.session_state.messages.append({"role": "user", "content": query})
+    # Guardar mensaje del usuario
+    st.session_state.messages.append({
+        "role": "user",
+        "content": query
+    })
 
     with st.chat_message("user"):
         st.write(query)
 
-    answer = rag_answer(query)
-
-    st.session_state.messages.append({"role": "assistant", "content": answer})
-
+    # Generar respuesta
     with st.chat_message("assistant"):
-        st.write(answer)
+        with st.spinner("Buscando respuesta..."):
+            try:
+                result = rag_answer(query)
+                answer = result["answer"]
+                context = result["context"]
+                sources = result["sources"]
+
+                st.write(answer)
+
+                with st.expander("Ver contexto recuperado"):
+                    if context:
+                        st.text(context)
+                    else:
+                        st.write("No se recuperó contexto.")
+
+                with st.expander("Ver fuentes"):
+                    metadatas = sources.get("metadatas", [])
+                    distances = sources.get("distances", [])
+                    ids = sources.get("ids", [])
+
+                    if metadatas:
+                        for i, meta in enumerate(metadatas):
+                            distance = distances[i] if i < len(distances) else "N/A"
+                            chunk_id = ids[i] if i < len(ids) else "N/A"
+
+                            st.write(
+                                f"**Fragmento {i+1}** | "
+                                f"id={chunk_id} | "
+                                f"source={meta.get('source')} | "
+                                f"page={meta.get('page')} | "
+                                f"category={meta.get('category')} | "
+                                f"distance={distance}"
+                            )
+                    else:
+                        st.write("No hay metadatos disponibles.")
+
+            except Exception as e:
+                answer = f"Ocurrió un error al procesar la consulta: {e}"
+                st.error(answer)
+
+    # Guardar respuesta
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": answer
+    })

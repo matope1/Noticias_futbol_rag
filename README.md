@@ -10,16 +10,16 @@ git clone https://github.com/matope1/Noticias_futbol_rag
 cd Noticias_futbol_rag
 ```
 ### 2. Editar .env
-- Cambiar "tu_api_key" por una key valida de gemini
+- Cambiar "tu_api_key" por una key valida de gemini. Chat de discord Guillermo Prieto
 
 ### 3. Asegurarse que docker esta abierto:
   - Levantar contenedores
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 ### 4. Hacer ingesta de documentos
 ```bash
-uv run ingesta/ingest.py
+docker exec -it noticias_futbol_rag-frontend-1 python ingest.py
 ```
 ### 5. Acceder a streamlit:
 ```bash
